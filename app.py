@@ -12,40 +12,32 @@ client = OpenAI(
     api_key=api_key,
 )
 
-def processar_e_analisar_dados():
-    print("[*] PASSO 1: A processar e preparar os dados com Pandas...")
-    
-    # 1. Simulamos a leitura/criação de um conjunto de dados (poderia ser um ficheiro CSV ou Excel)
-    dados_exemplo = {
-        "Produto": ["Teclado Mecânico", "Rato Gamer", "Monitor Ultrawide", "Headset Bluetooth", "Cadeira de Escritório"],
-        "Categoria": ["Periféricos", "Periféricos", "Monitores", "Áudio", "Mobiliário"],
-        "Preco_Unitario": [350.00, 150.00, 1800.00, 250.00, 1200.00],
-        "Quantidade_Vendida": [45, 120, 15, 60, 8]
-    }
-    
-    # Criamos o DataFrame do Pandas
-    df = pd.DataFrame(dados_exemplo)
-    
-    # Calculamos o faturamento total por produto (Processamento de dados)
-    df["Faturamento_Total"] = df["Preco_Unitario"] * df["Quantidade_Vendida"]
-    
-    print("\n--- Dados Processados (Tabela Interna) ---")
-    print(df.to_string(index=False))
-    print("-" * 45)
-    
-    # Convertemos os dados processados para formato de texto/tabela para a IA conseguir ler
-    dados_em_texto = df.to_csv(index=False)
-    
-    print("\n[*] PASSO 2: A enviar os dados processados para a IA da Groq analisar...")
+def processar_ficheiro_e_gerar_relatorio():
+    nome_ficheiro = "vendas.csv"
+    print(f"[*] A ler o ficheiro real '{nome_ficheiro}' com o Pandas...")
     
     try:
-        # Definimos o modelo detetado como funcional na sua conta
+        # 1. Leitura do ficheiro CSV real
+        df = pd.read_csv(nome_ficheiro)
+        
+        # Processamento de dados: Cálculo do Faturamento Total
+        df["Faturamento_Total"] = df["Preco_Unitario"] * df["Quantidade_Vendida"]
+        
+        print("\n--- Dados Lidos e Processados do Ficheiro ---")
+        print(df.to_string(index=False))
+        print("-" * 45)
+        
+        # Converte para texto para enviar à IA
+        dados_em_texto = df.to_csv(index=False)
+        
+        print("\n[*] A enviar os dados reais para análise da IA (Groq)...")
+        
+        # Modelo validado na sua conta
         modelo_escolhido = "openai/gpt-oss-safeguard-20b"
         
         prompt = (
-            "Com base nos seguintes dados de vendas processados, forneça um sumário executivo "
-            "destacando qual o produto que gerou maior faturamento total, qual vendeu mais unidades "
-            "e dê uma sugestão rápida de otimização de stock:\n\n"
+            "Com base nestes dados reais de vendas, elabore um sumário executivo profissional "
+            "destacando o produto com maior faturamento, o mais vendido e sugestões de otimização de stock:\n\n"
             f"{dados_em_texto}"
         )
         
@@ -59,13 +51,18 @@ def processar_e_analisar_dados():
         
         relatorio_ia = response.choices[0].message.content
         
-        print("\n[+] Relatório Analítico Gerado pela IA:")
-        print("=" * 60)
-        print(relatorio_ia)
-        print("=" * 60)
+        # 2. Geração automática do relatório num ficheiro de saída
+        nome_saida = "relatorio_executivo.md"
+        with open(nome_saida, "w", encoding="utf-8") as f:
+            f.write("# Relatório Executivo Automatizado\n\n")
+            f.write(relatorio_ia)
+            
+        print(f"\n[+] Sucesso! O relatório foi gerado e guardado automaticamente no ficheiro: '{nome_saida}'")
 
+    except FileNotFoundError:
+        print(f"[-] Erro: O ficheiro '{nome_ficheiro}' não foi encontrado na pasta do projeto.")
     except Exception as e:
-        print(f"\n[-] Erro ao comunicar com a IA: {e}")
+        print(f"[-] Erro ao processar: {e}")
 
 if __name__ == "__main__":
-    processar_e_analisar_dados()
+    processar_ficheiro_e_gerar_relatorio()
