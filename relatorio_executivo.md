@@ -1,60 +1,74 @@
 # Relatório Executivo Automatizado
 
-**Sumário Executivo – Análise de Vendas (Período – 2026)**  
+## Sumário Executivo – Análise de Vendas (Período em análise)
 
-| Produto | Categoria | Preço Unitário | Quantidade Vendida | Faturamento Total |
-|---------|-----------|----------------|--------------------|-------------------|
-| Teclado Mecânico | Periféricos | 350,00 € | 45 | 15 750,00 € |
-| Rato Gamer | Periféricos | 150,00 € | 120 | 18 000,00 € |
-| Monitor Ultrawide | Monitores | 1 800,00 € | 15 | 27 000,00 € |
-| Headset Bluetooth | Áudio | 250,00 € | 60 | 15 000,00 € |
-| Cadeira de Escritório | Mobiliário | 1 200,00 € | 8 | 9 600,00 € |
+| Produto               | Categoria     | Preço Unitário | Quantidade Vendida | Faturamento Total |
+|-----------------------|---------------|----------------|--------------------|-------------------|
+| Teclado Mecânico      | Periféricos   | R$ 350,00      | 45                 | R$ 15 750,00      |
+| Rato Gamer            | Periféricos   | R$ 150,00      | 120                | R$ 18 000,00      |
+| Monitor Ultrawide     | Monitores     | R$ 1 800,00    | 15                 | R$ 27 000,00      |
+| Headset Bluetooth     | Áudio         | R$ 250,00      | 60                 | R$ 15 000,00      |
+| Cadeira de Escritório | Mobiliário    | R$ 1 200,00    | 8                  | R$ 9 600,00       |
+| **TOTAL**             | –             | –              | **248**            | **R$ 85 350,00**  |
 
-### 1. Principais Indicadores
+### Principais Descobertas
 
-| Indicador | Resultado | Observação |
-|-----------|-----------|------------|
-| **Maior faturamento** | Monitor Ultrawide (27 000 €) | Produto de alto valor, margem potencial elevada, mas volume de vendas baixo |
-| **Mais vendido** | Rato Gamer (120 unidades) | Alto volume de vendas, forte presença no mix de periféricos |
-| **Categoria de maior faturamento** | Periféricos (33 750 €) | 2/5 produtos geram 66 % do total |
-| **Produto de menor faturamento** | Cadeira de Escritório (9 600 €) | Volume muito baixo (8 unidades) |
+| Indicador            | Valor          | Comentário |
+|----------------------|----------------|------------|
+| Faturamento total    | R$ 85 350,00   | Resultado consolidado de todas as categorias. |
+| Volume total         | 248 unidades   | O volume médio por produto é de **≈ 8,2 unidades**. |
+| Faturamento médio por unidade | R$ 344,44 | Reflete a diversidade de preços (de R$ 150 a R$ 1 800). |
 
-### 2. Análise de Stock e Recomendação
+#### 1. Segmentação por Categoria
+| Categoria   | Faturamento | % do Total | Quantidade | % da Quantidade |
+|-------------|-------------|------------|------------|-----------------|
+| Periféricos | R$ 33 750,00| 39,5%      | 165        | 66,5%           |
+| Monitores   | R$ 27 000,00| 31,7%      | 15         | 6,0%            |
+| Áudio       | R$ 15 000,00| 17,6%      | 60         | 24,2%           |
+| Mobiliário  | R$ 9 600,00 | 11,2%      | 8          | 3,2%            |
 
-| Produto | Estado de Stock Atual | Sugestões de Otimização |
-|---------|-----------------------|-------------------------|
-| **Rato Gamer** | Alta rotatividade (120 unidades) | - Manter nível de stock mínimo de 30 unidades para evitar rupturas.<br>- Avaliar incremento de 15 % na produção para aproveitar a demanda crescente. |
-| **Monitor Ultrawide** | Estoque limitado (15 unidades) | - Considerar aumento de 20 % nas unidades em estoque, visto que o produto possui alta margem.<br>- Avaliar campanhas de upsell (pack com teclado/monitor). |
-| **Teclado Mecânico** | Volume moderado (45 unidades) | - Restauração de stock em 25 % após 30 dias de alta demanda.<br>- Oferecer bundles com Rato Gamer para aumentar o ticket médio. |
-| **Headset Bluetooth** | Volume bom (60 unidades) | - Manter stock de segurança de 15 unidades.<br>- Parcerias com influenciadores para aumentar visibilidade. |
-| **Cadeira de Escritório** | Baixa rotatividade (8 unidades) | - Revisar política de preços, considerar promoção ou pacote “Home Office”.<br>- Avaliar descontinuação se não houver recuperação de vendas em 2 meses. |
+**Observações chave:**
 
-### 3. Estratégias de Receita e Mix
+- **Periféricos** dominam tanto em volume quanto em receita, mas representam apenas 39,5 % do faturamento, indicando margem potencial de crescimento em outras linhas.
+- **Monitores** trazem a maior contribuição de receita (R$ 27 000,00) apesar de um volume muito baixo (15 unidades). Este produto é de alta margem, mas possui baixa rotatividade.
+- **Mobiliário** tem o menor volume (8 unidades) e a menor contribuição de receita (11,2 %). O baixo volume indica necessidade de revisão de estratégias de venda ou posicionamento de preço.
 
-1. **Cross‑sell & Bundle**  
-   - Criar pacotes “Gaming Essentials” (Rato Gamer + Teclado Mecânico + Headset) com desconto de 10 %.  
-   - Pacotes “Work‑From‑Home” (Monitor Ultrawide + Cadeira de Escritório) com 5 % de desconto na cadeira.
+#### 2. Produto de Maior Volume
+- **Rato Gamer** – 120 unidades vendidas, gerando R$ 18 000,00 (21,1 % do total). 
+  - **Insight:** O produto tem o maior ticket médio dentro da categoria Periféricos, mas ainda pode ser impulsionado com campanhas de bundle (ex.: Rato + Teclado).
 
-2. **Ajuste de Preço**  
-   - Testar preço dinâmico no monitor (redução de 5 %) para acelerar a rotação sem afetar margem global.  
-   - Aumentar preço do headset em 8 % na fase de pico de demanda (férias/Black Friday).
+#### 3. Produto de Maior Receita
+- **Monitor Ultrawide** – 15 unidades geraram R$ 27 000,00 (31,7 % do total). 
+  - **Insight:** Produto de alta margem que pode ser um ponto de entrada para vendas de acessórios de monitor (cadeiras, suportes, cabos de alta qualidade).
 
-3. **Promoções Temporais**  
-   - Oferecer “Combo Gamer” em datas de lançamentos de jogos, maximizando a venda de periféricos.  
-   - Campanha de “Back to School” focada em monitor + teclado.
+#### 4. Tendências de Preço
+| Faixa de Preço | Produtos | % do Faturamento | % do Volume |
+|----------------|----------|-------------------|-------------|
+| R$ 0‑R$ 199,99 | Rato Gamer | 21,1 % | 48,4 % |
+| R$ 200‑R$ 399,99 | Teclado Mecânico, Headset | 23,7 % | 31,5 % |
+| R$ 400‑R$ 1 099,99 | – | – | – |
+| R$ 1 100‑R$ 1 800 | Cadeira, Monitor | 27,2 % | 9,7 % |
 
-4. **Revisão de Estoque**  
-   - Implementar sistema de previsão de demanda baseado em 30‑dias de vendas anteriores.  
-   - Estabelecer safety stock de 20 % para itens de alta margem (Monitor Ultrawide, Cadeira).
+**Conclusão de preço:** A maior parte da receita provém de itens de preço médio‑alto (R$ 250‑R$ 1 800), reforçando a importância de manter políticas de precificação diferenciada e ofertas de valor (bundle, garantia estendida).
 
-### 4. Próximos Passos
+### Recomendações de Ação
 
-| Ação | Responsável | Prazo | Métrica de Sucesso |
-|------|-------------|-------|--------------------|
-| Avaliar demanda futura de monitor | Logística | 30 dias | Taxa de ruptura < 5 % |
-| Lançar campanha “Gaming Essentials” | Marketing | 15 dias | Aumento de 12 % nas vendas de periféricos |
-| Revisar preço e promoções do headset | Comercial | 7 dias | Margem > 30 % |
-| Analisar viabilidade de descontinuação da cadeira | Financeiro | 45 dias | Redução de 25 % no custo de estoque |
+| Área | Ação | Objetivo |
+|------|------|----------|
+| **Vendas** | Criar pacotes “Gaming Bundle” (Rato + Teclado + Headset) | Aumentar volume de periféricos e margem de contribuição |
+| **Marketing** | Campanhas segmentadas por categoria, focando no Monitor Ultrawide e no Headset | Impulsionar conversão de produtos de alta margem |
+| **Estoque** | Reavaliar nível de estoque de Mobiliário | Reduzir custos de armazenagem, testar promoções de lançamento |
+| **Cross‑sell** | Implementar recomendação de acessórios de monitor (cadeiras, suportes) na página de checkout | Elevar ticket médio e fidelizar clientes de alta renda |
+| **Análise de Lucro** | Calcular margem bruta por produto | Identificar oportunidades de ajuste de preço ou de custos |
+| **Pesquisa de Mercado** | Levantar feedback dos clientes sobre o Rato Gamer | Melhorar o produto ou criar modelos de entrada para captar mais volume |
 
-**Resumo Final**  
-O monitor ultrawide é o principal gerador de receita, mas apresenta baixa rotação, sinalizando a necessidade de ajustes de stock e promoções. O rato gamer domina as vendas em volume e deve receber prioridade de reabastecimento. A cadeira de escritório apresenta baixo desempenho e pode ser alvo de re‑pricing ou descontinuação, enquanto o headset oferece oportunidades de cross‑sell. Implementar as recomendações acima maximizará a eficiência de inventário, aumentará o ticket médio e melhorará a margem geral do portfólio.
+### Próximos Passos
+
+1. **Relatório detalhado de margem** – Incorporar custos diretos para avaliar rentabilidade real por categoria.
+2. **Análise de sazonalidade** – Comparar dados de períodos anteriores (se houver) para identificar picos de demanda.
+3. **Benchmark de preços** – Mapear concorrência em cada categoria para ajustar precificação competitiva.
+4. **Testes A/B de campanha** – Medir desempenho de diferentes mensagens para Periféricos vs. Monitores.
+
+---
+
+**Resumo**: O portfólio atual gera R$ 85 350,00 em faturamento com 248 unidades vendidas, sendo os periféricos a categoria dominante em volume, enquanto os monitores são o maior gerador de receita. Há um potencial claro para aumentar a rentabilidade através de bundles, promoções direcionadas e revisão de estratégias de estoque, especialmente no segmento de mobiliário. A recomendação é focar em maximizar a conversão de periféricos de alta margem e criar sinergia entre produtos de valor elevado (monitores e cadeiras).
