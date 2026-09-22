@@ -1,116 +1,86 @@
-# Relatório Executivo (Executivo (Padrão))
+# Relatório Executivo (Executivo (Padrão) - Todas)
 
-## Relatório Executivo – Análise de Vendas (Período: Dados de 2024)
-
-| Produto              | Categoria     | Preço Unitário | Quantidade Vendida | Faturamento Total |
-|----------------------|---------------|----------------|--------------------|-------------------|
-| Teclado Mecânico     | Periféricos   | R$ 350,00      | 45                 | R$ 15 750,00      |
-| Rato Gamer           | Periféricos   | R$ 150,00      | 120                | R$ 18 000,00      |
-| Monitor Ultrawide    | Monitores     | R$ 1 800,00    | 15                 | R$ 27 000,00      |
-| Headset Bluetooth    | Áudio         | R$ 250,00      | 60                 | R$ 15 000,00      |
-| Cadeira de Escritório| Mobiliário   | R$ 1 200,00    | 8                  | R$ 9 600,00       |
-
-> **Total de Faturamento:** R$ 85 350,00  
-> **Total de Unidades Vendidas:** 248
+**Relatório Executivo de Vendas – Abril 2024**  
+*Análise de desempenho de produto e categoria – dados consolidados da base de vendas*
 
 ---
 
-## 1. Visão Geral dos Dados
+### 1️⃣ Visão geral
+| Indicador | Valor |
+|-----------|-------|
+| **Faturamento total** | **R$ 85 350,00** |
+| **Quantidade total vendida** | **248 unidades** |
+| **Receita média por unidade** | **R$ 344,26** |
+| **Número de SKUs analisados** | **5** |
 
-| Indicador               | Valor            | Observação |
-|--------------------------|------------------|------------|
-| **Faturamento médio/unitário** | R$ 344,52 | Calculado como total de faturamento / total de unidades. |
-| **Ticket médio** | R$ 344,52 | Valor médio que o cliente gasta por produto. |
-| **Participação de cada categoria no faturamento** |  |  |
-| Periféricos | 39,5 % | Maior contribuição, apesar de duas linhas distintas. |
-| Monitores | 31,7 % | Alta margem de preço, baixo volume. |
-| Áudio | 17,6 % | Volume razoável, preço médio. |
-| Mobiliário | 11,2 % | Pequeno volume, preço elevado. |
-
-> **Resumo:** 65,2 % do faturamento vem de apenas 3 categorias, sendo Periféricos e Monitores as principais.
+O portfólio atual gera um faturamento consolidado de R$ 85 350,00, distribuído em 248 unidades vendidas, com uma média de R$ 344,26 por unidade, refletindo a heterogeneidade entre produtos de preço médio e premium.
 
 ---
 
-## 2. Análise por Categoria
+### 2️⃣ Desdobramento por categoria
 
-| Categoria   | Unidades Totais | Faturamento | % do Faturamento | Ticket Médio (Categoria) | Observação |
-|-------------|-----------------|-------------|------------------|--------------------------|------------|
-| Periféricos | 165             | R$ 33 750,00 | 39,5 %           | R$ 204,55                | Maior volume, bom mix preço/volume. |
-| Monitores   | 15              | R$ 27 000,00 | 31,7 %           | R$ 1 800,00              | Alto ticket, potencial de upsell. |
-| Áudio       | 60              | R$ 15 000,00 | 17,6 %           | R$ 250,00                | Volume decente, margem média. |
-| Mobiliário  | 8               | R$ 9 600,00  | 11,2 %           | R$ 1 200,00              | Pouco volume, alto ticket. |
+| Categoria | Faturamento | % do total | Quantidade | % das vendas | Observações |
+|-----------|-------------|-----------|------------|--------------|--------------|
+| Periféricos | R$ 33 750,00 | 39,5 % | 165 | 66,5 % | Alto volume, margem potencialmente mais baixa |
+| Monitores | R$ 27 000,00 | 31,6 % | 15 | 6,0 % | Alta contribuição de margem, volume limitado |
+| Áudio | R$ 15 000,00 | 17,6 % | 60 | 24,2 % | Volume médio, preço competitivo |
+| Mobiliário | R$ 9 600,00 | 11,3 % | 8 | 3,2 % | Produto de preço elevado, volume reduzido |
 
-### Pontos de atenção
-
-| Categoria | Produto com maior ticket | Produto com maior volume | Estratégia sugerida |
-|-----------|--------------------------|--------------------------|---------------------|
-| Periféricos | Rato Gamer (R$ 150,00) | Rato Gamer (120 unidades) | Aumentar promoções de bundles “Periféricos Completo” |
-| Monitores | Monitor Ultrawide (R$ 1 800,00) | Monitor Ultrawide (15 unidades) | Campanhas focadas em profissionais de design/streaming |
-| Áudio | Headset Bluetooth (R$ 250,00) | Headset Bluetooth (60 unidades) | Cross‑sell com acessórios de áudio |
-| Mobiliário | Cadeira de Escritório (R$ 1 200,00) | Cadeira de Escritório (8 unidades) | Parcerias com empresas de RH/Teletrabalho |
+**Insight chave**:  
+- **Periféricos** dominam o volume de vendas, mas os **Monitores** são responsáveis por quase a metade do faturamento total, evidenciando a importância de estratégias focadas em produtos de maior ticket.  
+- **Mobiliário** representa uma oportunidade de cross‑sell com alto valor agregado, apesar do baixo volume.
 
 ---
 
-## 3. Análise por Produto
+### 3️⃣ Top 3 produtos por faturamento
 
-| Produto | % da Receita | % da Quantidade Vendida | Observação |
-|---------|--------------|-------------------------|------------|
-| Rato Gamer | 21,1 % | 48,4 % | Produto de alta rotatividade e baixo preço – boa margem de volume. |
-| Monitor Ultrawide | 31,7 % | 6,0 % | Receita significativa, porém volume muito baixo. O ticket é elevado, potencial de *high‑value* marketing. |
-| Headset Bluetooth | 17,6 % | 24,2 % | Bom equilíbrio entre preço e volume. |
-| Teclado Mecânico | 18,5 % | 18,2 % | Preço relativamente alto, mas volume moderado. |
-| Cadeira de Escritório | 11,2 % | 3,2 % | Vendas esparsas; pode ser um item “luxo” ou “necessidade crítica” para nichos específicos. |
+| Rank | Produto | Faturamento | Quantidade | % do faturamento total |
+|------|---------|-------------|------------|------------------------|
+| 1 | Monitor Ultrawide | R$ 27 000,00 | 15 | 31,6 % |
+| 2 | Rato Gamer | R$ 18 000,00 | 120 | 21,1 % |
+| 3 | Teclado Mecânico | R$ 15 750,00 | 45 | 18,5 % |
 
-> **Insight principal:** O *Rato Gamer* domina o volume, enquanto o *Monitor Ultrawide* domina o ticket médio. Se o objetivo for aumentar a receita, focar em estratégias que aumentem a venda de monitores pode ser mais lucrativo.
+**Observação**: O *Rato Gamer* é o produto de maior volume, enquanto o *Monitor Ultrawide* é o mais lucrativo individualmente. O *Teclado Mecânico* combina volume moderado com preço premium, oferecendo boa margem.
 
 ---
 
-## 4. Métricas de Performance
+### 4️⃣ Produto mais “eficiente” (receita por unidade)
 
-| Métrica | Valor | Benchmark (indústria) |
-|---------|-------|-----------------------|
-| **Taxa de conversão de produto** |  |  |
-| **Margem média (assumindo custo 60 % do preço)** | ~40 % | Média para hardware de consumidor |
-| **Ciclo de vendas** |  | Não disponível nos dados |
-| **Ticket médio por cliente** | R$ 344,52 | Indicação de compra por 1‑3 itens |
+| Produto | Preço Unitário | Faturamento | Receita/Unidade |
+|---------|----------------|-------------|-----------------|
+| Monitor Ultrawide | R$ 1 800,00 | R$ 27 000,00 | R$ 1 800,00 |
+| Cadeira de Escritório | R$ 1 200,00 | R$ 9 600,00 | R$ 1 200,00 |
+| Headset Bluetooth | R$ 250,00 | R$ 15 000,00 | R$ 250,00 |
+| Rato Gamer | R$ 150,00 | R$ 18 000,00 | R$ 150,00 |
+| Teclado Mecânico | R$ 350,00 | R$ 15 750,00 | R$ 350,00 |
 
-> *Observação:* A margem de 40 % é uma suposição. Se os custos reais forem diferentes, recomendo coletar dados de Custo de Mercadorias Vendidas (CMV) para um cálculo preciso.
-
----
-
-## 5. Recomendações Estratégicas
-
-| Área | Ação recomendada | Justificativa |
-|------|------------------|---------------|
-| **Marketing** | • Campanhas de bundle “Periféricos + Acessórios” | Aumenta a média de itens por cliente. |
-| | • Publicidade direcionada a profissionais de design (Monitores) | Alcançar nichos de alto poder de compra. |
-| **Preços** | • Testar promoções de *“Compra 2 e ganhe 10%”* nos Periféricos | Aproveitar alto volume de Rato Gamer e Teclado. |
-| | • Considerar descontos em Cadeira de Escritório em pacotes corporativos | Reduzir estoque esparso e aumentar receita. |
-| **Vendas** | • Treinar equipe de vendas para up‑sell de Monitores quando houver pedido de Periféricos | Capturar mais receita com itens de alto ticket. |
-| | • Avaliar possibilidade de introduzir novos produtos na linha de Monitores (ex.: 4K) | Aumentar ticket médio. |
-| **Logística** | • Garantir disponibilidade de estoque de Rato Gamer e Headset | Evitar perda de vendas por falta de produto. |
-| | • Reavaliar preços de Cadeira de Escritório ou introduzir modelos mais acessíveis | Potencial de volume maior. |
+- **Monitor Ultrawide** tem o maior ticket unitário, mas a baixa quantidade indica risco de estagnação; considere promoções de bundle.  
+- **Rato Gamer** oferece o melhor equilíbrio entre volume e receita, sendo ideal para campanhas de “up‑sell”.
 
 ---
 
-## 6. Próximos Passos
+### 5️⃣ Recomendações de ação
 
-1. **Coleta de Dados Adicionais**  
-   - Custo de produção/CMV para cálculo preciso de margem.  
-   - Taxas de conversão por canal de venda.  
-   - Feedback de clientes para entender barreiras de compra, especialmente no segmento de Monitores.
-
-2. **Implementação de KPIs**  
-   - *Faturamento por Categoria* (mensal).  
-   - *Volume de Vendas de Bundles* (mensal).  
-   - *Taxa de Retenção de Clientes* (para produtos de alta rotatividade).
-
-3. **Teste de Campanhas**  
-   - Lançar promoções de *Rato Gamer + Teclado* em redes sociais.  
-   - Campanhas “Office Upgrade” focando em Cadeira + Monitor em empresas de home office.
+| Área | Estratégia | Objetivo | KPI de sucesso |
+|------|------------|----------|----------------|
+| **Mix de portfólio** | Introduzir novas variações de *Monitor* (por exemplo, 4K/27” com preço mais acessível) | Aumentar volume do segmento de monitores | Crescimento de 15 % no volume de monitores |
+| **Campanhas de cross‑sell** | Bundle *Rato Gamer* + *Headset Bluetooth* | Incrementar ticket médio | 20 % de incremento no ticket médio |
+| **Promoções de alto valor** | Oferecer descontos progressivos em *Cadeiras de Escritório* | Estimular compras em grande escala | 10 % de aumento nas vendas de móveis |
+| **Marketing de conteúdo** | Criação de guias de “Setup Gamer” que inclua *Monitor Ultrawide*, *Teclado Mecânico* e *Rato Gamer* | Melhorar percepção de marca e fidelizar clientes | 30 % de aumento no tráfego de páginas de produtos |
+| **Análise de custo** | Avaliar margens de cada SKU (incluir custos de logística e aquisição) | Identificar oportunidades de ajuste de preço | Margem líquida > 35 % nos principais SKUs |
 
 ---
 
-### Conclusão
+### 6️⃣ Próximos passos
 
-Os dados revelam um perfil equilibrado entre volume (Periféricos) e ticket médio (Monitores). Estratégias que combinam aumento de volume em produtos de alta rotatividade com foco em itens de alto valor (Monitores e Mobiliário) podem impulsionar significativamente o faturamento total. A aplicação de bundles, promoções segmentadas e reforço de campanhas nos nichos identificados devem ser priorizadas para maximizar o retorno sobre investimento.
+1. **Relatórios mensais**: Automatizar a coleta de dados para acompanhar a evolução dos KPIs indicados.  
+2. **Pesquisa de satisfação**: Entender a percepção de qualidade dos clientes, especialmente em produtos de alto ticket.  
+3. **Simulação de preços**: Utilizar elasticidade de preço para otimizar a estratégia de precificação em cada categoria.
+
+---
+
+### 🔚 Conclusão
+
+A análise evidencia que o portfólio atual tem um bom equilíbrio entre volume e ticket, mas há oportunidades claras para aumentar o faturamento por meio de *bundles* e expansão de categorias de alto valor agregado. Implementar as recomendações propostas deverá posicionar a empresa para um crescimento sustentável e um aumento significativo do ticket médio nas próximas quatro semanas.
+
+---

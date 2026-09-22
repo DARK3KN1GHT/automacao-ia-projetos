@@ -1,5 +1,6 @@
 import os
 import io
+import zipfile
 import pandas as pd
 import streamlit as st
 from openai import OpenAI
@@ -22,34 +23,14 @@ st.set_page_config(
 # --- ESTILIZAÇÃO CSS CORPORATIVA PROFISSIONAL ---
 st.markdown("""
     <style>
-    /* Estilo global e fontes */
     .main {
         background-color: #0E1117;
     }
-    
-    /* Cartões de Métricas (KPIs) com efeito moderno */
-    .metric-card {
-        background: linear-gradient(135deg, #1E2530 0%, #13171F 100%);
-        border: 1px solid #2A3441;
-        padding: 20px;
-        border-radius: 12px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-        text-align: center;
-        transition: transform 0.2s ease;
-    }
-    .metric-card:hover {
-        border-color: #3B82F6;
-        transform: translateY(-2px);
-    }
-    
-    /* Títulos de secção personalizados */
     h1, h2, h3 {
         font-family: 'Inter', sans-serif;
         font-weight: 700;
         letter-spacing: -0.5px;
     }
-    
-    /* Divisores elegantes */
     hr {
         margin: 1.5rem 0;
         border-color: #2A3441;
@@ -58,10 +39,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- CABEÇALHO DA APLICAÇÃO ---
-col_head1, col_head2 = st.columns([0.85, 0.15])
-with col_head1:
-    st.title("⚡ Enterprise Data & AI Intelligence Hub")
-    st.markdown("Plataforma avançada para validação de dados, monitorização de KPIs corporativos, relatórios gerados por IA e exportação executiva.")
+st.title("⚡ Enterprise Data & AI Intelligence Hub")
+st.markdown("Plataforma avançada para validação de dados, monitorização de KPIs corporativos, relatórios gerados por IA e exportação executiva.")
 
 st.divider()
 
@@ -94,12 +73,12 @@ prompts_sistema = {
 }
 
 st.sidebar.divider()
-st.sidebar.markdown("#### 📁 Histórico de Sessão")
+st.sidebar.markdown("#### 📂 Histórico de Relatórios")
 if os.path.exists("relatorio_executivo.md"):
-    if st.sidebar.button("📂 Ver Último Relatório Guardado", use_container_width=True):
+    if st.sidebar.button("📄 Carregar Último Relatório Salvo", use_container_width=True):
         with open("relatorio_executivo.md", "r", encoding="utf-8") as f:
-            conteudo_historico = f.read()
-        st.sidebar.markdown(conteudo_historico)
+            st.session_state["relatorio_atual"] = f.read()
+        st.sidebar.success("Relatório carregado com sucesso!")
 else:
     st.sidebar.info("Nenhum relatório anterior guardado.")
 
@@ -119,6 +98,10 @@ if ficheiro_carregado is not None:
         if colunas_em_falta:
             st.error(f"❌ Erro de Validação: O ficheiro não contém as colunas obrigatórias: {colunas_em_falta}")
         else:
+            # Auditoria de anomalias (Valores negativos)
+            if (df["Preco_Unitario"] < 0).any() or (df["Quantidade_Vendida"] < 0).any():
+                st.warning("⚠️ **Aviso de Auditoria:** Foram detetados valores negativos nos preços ou quantidades. Os cálculos analíticos podem ser comprometidos.")
+
             # Processamento base do faturamento
             df["Faturamento_Total"] = df["Preco_Unitario"] * df["Quantidade_Vendida"]
             
@@ -222,11 +205,136 @@ if ficheiro_carregado is not None:
                 st.divider()
                 st.markdown("## 📥 Exportação de Resultados Profissionais")
                 
-                col_down1, col_down2 = st.columns(2)
+                # --- PREPARAÇÃO DOS FICHEIROS PARA DOWNLOAD (EXCEL PROFISSIONAL & ZIP) ---
+                df_excel = st.session_state["df_processado"]
+                excel_output = io.BytesIO()
+                
+                wb = openpyxl.Workbook()
+                
+                # Estilos comuns
+                header_fill = PatternFill(start_color="1F4E78", end_color="1F4E78", fill_type="solid")
+                header_font = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
+                data_font = Font(name="Calibri", size=11)
+                title_font = Font(name="Calibri", size=14, bold=True, color="1F4E78")
+                thin_border = Border(
+                    left=Side(style='thin', color='D9D9D9'), right=Side(style='thin', color='D9D9D9'),
+                    top=Side(style='thin', color='D9D9D9'), bottom=Side(style='thin', color='D9D9D9')
+                )
+                
+                # --- ABA 1: RESUMO DE KPIs (Alinhada perfeitamente na coluna A) ---
+                ws_kpi = wb.active
+                ws_kpi.title = "Resumo & KPIs"
+                ws_kpi.views.sheetView[0].showGridLines = True
+                
+                ws_kpi.cell(row=1, column=1, value="PAINEL EXECUTIVO DE INDICADORES").font = title_font
+                ws_kpi.append([]) # Linha 2 em branco
+                
+                kpi_headers = ["Indicador", "Valor Consolidado"]
+                ws_kpi.append(kpi_headers) # Linha 3
+                
+                # Estilizar cabeçalho de KPIs
+                for col_num in range(1, 3):
+                    cell = ws_kpi.cell(row=3, column=col_num)
+                    cell.fill = header_fill
+                    cell.font = header_font
+                    cell.alignment = Alignment(horizontal="center", vertical="center")
+                
+                kpi_data = [
+                    ["Faturamento Total", total_faturamento],
+                    ["Volume Total Vendido", total_quantidade],
+                    ["Ticket Médio Global", ticket_medio]
+                ]
+                
+                for r_idx, row_val in enumerate(kpi_data, start=4):
+                    ws_kpi.append(row_val)
+                    c1 = ws_kpi.cell(row=r_idx, column=1)
+                    c2 = ws_kpi.cell(row=r_idx, column=2)
+                    c1.font = data_font
+                    c1.border = thin_border
+                    c2.font = data_font
+                    c2.border = thin_border
+                    if "Faturamento" in row_val[0] or "Ticket" in row_val[0]:
+                        c2.number_format = '"R$ "* #,##0.00'
+                        c2.alignment = Alignment(horizontal="right")
+                    else:
+                        c2.number_format = '#,##0'
+                        c2.alignment = Alignment(horizontal="center")
+
+                # Ajustar largura automática da Aba 1
+                for col in ws_kpi.columns:
+                    max_len = max(len(str(cell.value or '')) for cell in col)
+                    col_letter = get_column_letter(col[0].column)
+                    ws_kpi.column_dimensions[col_letter].width = max(max_len + 6, 22)
+
+                # --- ABA 2: DADOS DETALHADOS ---
+                ws_data = wb.create_sheet(title="Dados Detalhados")
+                ws_data.views.sheetView[0].showGridLines = True
+                
+                headers = list(df_excel.columns)
+                ws_data.append(headers)
+                
+                for col_num in range(1, len(headers) + 1):
+                    cell = ws_data.cell(row=1, column=col_num)
+                    cell.fill = header_fill
+                    cell.font = header_font
+                    cell.alignment = Alignment(horizontal="center", vertical="center")
+                
+                for row_idx, row in enumerate(df_excel.values, start=2):
+                    ws_data.append(list(row))
+                    for col_idx in range(1, len(row) + 1):
+                        cell = ws_data.cell(row=row_idx, column=col_idx)
+                        cell.font = data_font
+                        cell.border = thin_border
+                        if headers[col_idx - 1] in ["Preco_Unitario", "Faturamento_Total"]:
+                            cell.number_format = '"R$ "* #,##0.00'
+                            cell.alignment = Alignment(horizontal="right")
+                        elif headers[col_idx - 1] == "Quantidade_Vendida":
+                            cell.number_format = '#,##0'
+                            cell.alignment = Alignment(horizontal="center")
+                        else:
+                            cell.alignment = Alignment(horizontal="left")
+                
+                last_row = len(df_excel) + 1
+                total_row_idx = last_row + 1
+                total_font = Font(name="Calibri", size=11, bold=True)
+                total_border = Border(top=Side(style='thin', color='000000'), bottom=Side(style='double', color='000000'))
+                
+                ws_data.cell(row=total_row_idx, column=1, value="TOTAL")
+                ws_data.cell(row=total_row_idx, column=4, value=f"=SUM(D2:D{last_row})")
+                ws_data.cell(row=total_row_idx, column=5, value=f"=SUM(E2:E{last_row})")
+                
+                for col_idx in range(1, len(headers) + 1):
+                    cell = ws_data.cell(row=total_row_idx, column=col_idx)
+                    cell.font = total_font
+                    cell.border = total_border
+                    if headers[col_idx - 1] in ["Preco_Unitario", "Faturamento_Total"]:
+                        cell.number_format = '"R$ "* #,##0.00'
+                        cell.alignment = Alignment(horizontal="right")
+                    elif headers[col_idx - 1] == "Quantidade_Vendida":
+                        cell.number_format = '#,##0'
+                        cell.alignment = Alignment(horizontal="center")
+                
+                for col in ws_data.columns:
+                    max_len = max(len(str(cell.value or '')) for cell in col)
+                    col_letter = get_column_letter(col[0].column)
+                    ws_data.column_dimensions[col_letter].width = max(max_len + 4, 15)
+                
+                wb.save(excel_output)
+                excel_bytes = excel_output.getvalue()
+
+                # Criar Pacote ZIP em memória
+                zip_output = io.BytesIO()
+                with zipfile.ZipFile(zip_output, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                    zipf.writestr("relatorio_executivo.md", st.session_state["relatorio_atual"])
+                    zipf.writestr("relatorio_vendas_executivo.xlsx", excel_bytes)
+                zip_bytes = zip_output.getvalue()
+
+                # Botões de Download em colunas harmoniosas
+                col_down1, col_down2, col_down3 = st.columns(3)
                 
                 with col_down1:
                     st.download_button(
-                        label="📄 Descarregar Relatório em Markdown (.md)",
+                        label="📄 Relatório Markdown (.md)",
                         data=st.session_state["relatorio_atual"],
                         file_name="relatorio_executivo.md",
                         mime="text/markdown",
@@ -234,79 +342,20 @@ if ficheiro_carregado is not None:
                     )
                 
                 with col_down2:
-                    df_excel = st.session_state["df_processado"]
-                    output = io.BytesIO()
-                    
-                    wb = openpyxl.Workbook()
-                    ws = wb.active
-                    ws.title = "Relatório Executivo"
-                    ws.views.sheetView[0].showGridLines = True
-                    
-                    headers = list(df_excel.columns)
-                    ws.append(headers)
-                    
-                    header_fill = PatternFill(start_color="1F4E78", end_color="1F4E78", fill_type="solid")
-                    header_font = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
-                    data_font = Font(name="Calibri", size=11)
-                    total_font = Font(name="Calibri", size=11, bold=True)
-                    
-                    thin_border = Border(
-                        left=Side(style='thin', color='D9D9D9'), right=Side(style='thin', color='D9D9D9'),
-                        top=Side(style='thin', color='D9D9D9'), bottom=Side(style='thin', color='D9D9D9')
-                    )
-                    total_border = Border(top=Side(style='thin', color='000000'), bottom=Side(style='double', color='000000'))
-                    
-                    for col_num in range(1, len(headers) + 1):
-                        cell = ws.cell(row=1, column=col_num)
-                        cell.fill = header_fill
-                        cell.font = header_font
-                        cell.alignment = Alignment(horizontal="center", vertical="center")
-                    
-                    for row_idx, row in enumerate(df_excel.values, start=2):
-                        ws.append(list(row))
-                        for col_idx in range(1, len(row) + 1):
-                            cell = ws.cell(row=row_idx, column=col_idx)
-                            cell.font = data_font
-                            cell.border = thin_border
-                            if headers[col_idx - 1] in ["Preco_Unitario", "Faturamento_Total"]:
-                                cell.number_format = '"R$ "* #,##0.00'
-                                cell.alignment = Alignment(horizontal="right")
-                            elif headers[col_idx - 1] == "Quantidade_Vendida":
-                                cell.number_format = '#,##0'
-                                cell.alignment = Alignment(horizontal="center")
-                            else:
-                                cell.alignment = Alignment(horizontal="left")
-                    
-                    last_row = len(df_excel) + 1
-                    total_row_idx = last_row + 1
-                    ws.cell(row=total_row_idx, column=1, value="TOTAL")
-                    ws.cell(row=total_row_idx, column=4, value=f"=SUM(D2:D{last_row})")
-                    ws.cell(row=total_row_idx, column=5, value=f"=SUM(E2:E{last_row})")
-                    
-                    for col_idx in range(1, len(headers) + 1):
-                        cell = ws.cell(row=total_row_idx, column=col_idx)
-                        cell.font = total_font
-                        cell.border = total_border
-                        if headers[col_idx - 1] in ["Preco_Unitario", "Faturamento_Total"]:
-                            cell.number_format = '"R$ "* #,##0.00'
-                            cell.alignment = Alignment(horizontal="right")
-                        elif headers[col_idx - 1] == "Quantidade_Vendida":
-                            cell.number_format = '#,##0'
-                            cell.alignment = Alignment(horizontal="center")
-                    
-                    for col in ws.columns:
-                        max_len = max(len(str(cell.value or '')) for cell in col)
-                        col_letter = get_column_letter(col[0].column)
-                        ws.column_dimensions[col_letter].width = max(max_len + 4, 15)
-                    
-                    wb.save(output)
-                    excel_data = output.getvalue()
-                    
                     st.download_button(
-                        label="📊 Descarregar Relatório Excel Profissional (.xlsx)",
-                        data=excel_data,
-                        file_name="relatorio_vendas_profissional.xlsx",
+                        label="📊 Excel Executivo (.xlsx)",
+                        data=excel_bytes,
+                        file_name="relatorio_vendas_executivo.xlsx",
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        use_container_width=True
+                    )
+
+                with col_down3:
+                    st.download_button(
+                        label="📦 Descarregar Pacote Completo (.zip)",
+                        data=zip_bytes,
+                        file_name="pacote_relatorio_executivo.zip",
+                        mime="application/zip",
                         use_container_width=True
                     )
                     
