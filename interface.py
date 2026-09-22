@@ -20,9 +20,9 @@ client = OpenAI(
 st.set_page_config(page_title="Automação de Dados com IA", page_icon="📊", layout="wide")
 
 st.title("📊 Painel de Automação de Dados e Análise Inteligente")
-st.write("Carregue o seu ficheiro CSV para processar dados, pré-visualizar gráficos e exportar relatórios profissionais em Markdown e Excel.")
+st.write("Carregue o seu ficheiro CSV para processar dados, personalizar relatórios com IA e exportar em Markdown e Excel Profissional.")
 
-# Barra lateral para histórico de relatórios guardados
+# --- BARRA LATERAL (HISTÓRICO E CONFIGURAÇÕES) ---
 st.sidebar.header("📁 Histórico de Relatórios")
 if os.path.exists("relatorio_executivo.md"):
     if st.sidebar.button("Ver Último Relatório Guardado"):
@@ -32,7 +32,30 @@ if os.path.exists("relatorio_executivo.md"):
 else:
     st.sidebar.info("Nenhum relatório anterior encontrado.")
 
-# Componente para carregar ficheiro na interface
+st.sidebar.divider()
+st.sidebar.header("⚙️ Configurações da IA")
+tom_relatorio = st.sidebar.selectbox(
+    "Escolha o tom do relatório:",
+    ["Executivo (Padrão)", "Comercial / Foco em Vendas", "Técnico / Foco em Custos"]
+)
+
+# Se o utilizador mudar o tom, limpamos o relatório anterior da sessão para evitar conflitos
+if "tom_anterior" not in st.session_state:
+    st.session_state["tom_anterior"] = tom_relatorio
+
+if st.session_state["tom_anterior"] != tom_relatorio:
+    st.session_state["tom_anterior"] = tom_relatorio
+    if "relatorio_atual" in st.session_state:
+        del st.session_state["relatorio_atual"] # Reseta a pré-visualização ao mudar de tom
+
+# Mapeamento dos tons para os prompts do sistema
+prompts_sistema = {
+    "Executivo (Padrão)": "Você é um analista de dados sénior especialista em relatórios executivos.",
+    "Comercial / Foco em Vendas": "Você é um diretor comercial focado em estratégias de vendas, expansão de mercado e aumento de receita.",
+    "Técnico / Foco em Custos": "Você é um auditor financeiro e de operações focado em otimização de stock, margens e redução de custos."
+}
+
+# --- CORPO DA APLICAÇÃO ---
 ficheiro_carregado = st.file_uploader("Escolha um ficheiro CSV", type=["csv"])
 
 if ficheiro_carregado is not None:
@@ -51,17 +74,18 @@ if ficheiro_carregado is not None:
             st.dataframe(df)
             
             if st.button("Executar Análise com IA e Gerar Pré-visualização"):
-                with st.spinner("A processar dados, a desenhar gráficos e a contactar a IA da Groq..."):
+                with st.spinner(f"A processar dados com o tom '{tom_relatorio}'..."):
                     # Processamento com Pandas
                     df["Faturamento_Total"] = df["Preco_Unitario"] * df["Quantidade_Vendida"]
                     dados_em_texto = df.to_csv(index=False)
                     
-                    # Chamada à API da Groq
+                    # Chamada à API da Groq com o tom selecionado
+                    system_prompt = prompts_sistema[tom_relatorio]
                     response = client.chat.completions.create(
                         model="openai/gpt-oss-safeguard-20b",
                         messages=[
-                            {"role": "system", "content": "Você é um analista de dados sénior especialista em relatórios executivos."},
-                            {"role": "user", "content": f"Elabore um sumário executivo detalhado com base nestes dados:\n\n{dados_em_texto}"}
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": f"Elabore um relatório detalhado com base nestes dados:\n\n{dados_em_texto}"}
                         ],
                     )
                     
@@ -73,7 +97,7 @@ if ficheiro_carregado is not None:
                     
                     # Guarda também no disco para o histórico lateral
                     with open("relatorio_executivo.md", "w", encoding="utf-8") as f:
-                        f.write("# Relatório Executivo Automatizado\n\n")
+                        f.write(f"# Relatório Executivo ({tom_relatorio})\n\n")
                         f.write(relatorio_ia)
                 
                 st.success("Análise e pré-visualização geradas com sucesso!")
@@ -87,7 +111,7 @@ if ficheiro_carregado is not None:
                 aba_texto, aba_graficos = st.tabs(["📄 Pré-visualização do Relatório", "📈 Pré-visualização de Gráficos"])
                 
                 with aba_texto:
-                    st.info("Verifique abaixo o conteúdo exato que será gravado no ficheiro final:")
+                    st.info(f"Conteúdo atual gerado com o tom: **{tom_relatorio}**")
                     st.markdown(st.session_state["relatorio_atual"])
                 
                 with aba_graficos:
@@ -117,48 +141,34 @@ if ficheiro_carregado is not None:
                     wb = openpyxl.Workbook()
                     ws = wb.active
                     ws.title = "Relatório de Vendas"
-                    
-                    # Garante que as grelhas (gridlines) aparecem visíveis
                     ws.views.sheetView[0].showGridLines = True
                     
-                    # Cabeçalhos
                     headers = list(df_excel.columns)
                     ws.append(headers)
                     
-                    # Estilos de design profissional
-                    header_fill = PatternFill(start_color="1F4E78", end_color="1F4E78", fill_type="solid") # Azul corporativo escuro
+                    header_fill = PatternFill(start_color="1F4E78", end_color="1F4E78", fill_type="solid")
                     header_font = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
                     data_font = Font(name="Calibri", size=11)
                     total_font = Font(name="Calibri", size=11, bold=True)
                     
                     thin_border = Border(
-                        left=Side(style='thin', color='D9D9D9'),
-                        right=Side(style='thin', color='D9D9D9'),
-                        top=Side(style='thin', color='D9D9D9'),
-                        bottom=Side(style='thin', color='D9D9D9')
+                        left=Side(style='thin', color='D9D9D9'), right=Side(style='thin', color='D9D9D9'),
+                        top=Side(style='thin', color='D9D9D9'), bottom=Side(style='thin', color='D9D9D9')
                     )
+                    total_border = Border(top=Side(style='thin', color='000000'), bottom=Side(style='double', color='000000'))
                     
-                    total_border = Border(
-                        top=Side(style='thin', color='000000'),
-                        bottom=Side(style='double', color='000000')
-                    )
-                    
-                    # Formatar cabeçalho
                     for col_num in range(1, len(headers) + 1):
                         cell = ws.cell(row=1, column=col_num)
                         cell.fill = header_fill
                         cell.font = header_font
                         cell.alignment = Alignment(horizontal="center", vertical="center")
                     
-                    # Inserir dados das linhas
                     for row_idx, row in enumerate(df_excel.values, start=2):
                         ws.append(list(row))
                         for col_idx in range(1, len(row) + 1):
                             cell = ws.cell(row=row_idx, column=col_idx)
                             cell.font = data_font
                             cell.border = thin_border
-                            
-                            # Formatação de números (Preço e Faturamento)
                             if headers[col_idx - 1] in ["Preco_Unitario", "Faturamento_Total"]:
                                 cell.number_format = '"R$ "* #,##0.00'
                                 cell.alignment = Alignment(horizontal="right")
@@ -168,15 +178,12 @@ if ficheiro_carregado is not None:
                             else:
                                 cell.alignment = Alignment(horizontal="left")
                     
-                    # Adicionar Linha de Totais com fórmulas reais do Excel
                     last_row = len(df_excel) + 1
                     total_row_idx = last_row + 1
-                    
                     ws.cell(row=total_row_idx, column=1, value="TOTAL")
-                    ws.cell(row=total_row_idx, column=4, value=f"=SUM(D2:D{last_row})") # Soma da quantidade
-                    ws.cell(row=total_row_idx, column=5, value=f"=SUM(E2:E{last_row})") # Soma do faturamento
+                    ws.cell(row=total_row_idx, column=4, value=f"=SUM(D2:D{last_row})")
+                    ws.cell(row=total_row_idx, column=5, value=f"=SUM(E2:E{last_row})")
                     
-                    # Estilizar linha de totais
                     for col_idx in range(1, len(headers) + 1):
                         cell = ws.cell(row=total_row_idx, column=col_idx)
                         cell.font = total_font
@@ -188,7 +195,6 @@ if ficheiro_carregado is not None:
                             cell.number_format = '#,##0'
                             cell.alignment = Alignment(horizontal="center")
                     
-                    # Ajuste automático inteligente da largura das colunas
                     for col in ws.columns:
                         max_len = max(len(str(cell.value or '')) for cell in col)
                         col_letter = get_column_letter(col[0].column)
