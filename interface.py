@@ -20,7 +20,7 @@ client = OpenAI(
 st.set_page_config(page_title="Automação de Dados com IA", page_icon="📊", layout="wide")
 
 st.title("📊 Painel de Automação de Dados e Análise Inteligente")
-st.write("Carregue o seu ficheiro CSV para processar dados, personalizar relatórios com IA e exportar em Markdown e Excel Profissional.")
+st.write("Carregue o seu ficheiro CSV para processar dados, filtrar categorias, personalizar relatórios com IA e exportar em Markdown e Excel Profissional.")
 
 # --- BARRA LATERAL (HISTÓRICO E CONFIGURAÇÕES) ---
 st.sidebar.header("📁 Histórico de Relatórios")
@@ -39,16 +39,15 @@ tom_relatorio = st.sidebar.selectbox(
     ["Executivo (Padrão)", "Comercial / Foco em Vendas", "Técnico / Foco em Custos"]
 )
 
-# Se o utilizador mudar o tom, limpamos o relatório anterior da sessão para evitar conflitos
+# Gestão de estado para mudança de tom
 if "tom_anterior" not in st.session_state:
     st.session_state["tom_anterior"] = tom_relatorio
 
 if st.session_state["tom_anterior"] != tom_relatorio:
     st.session_state["tom_anterior"] = tom_relatorio
     if "relatorio_atual" in st.session_state:
-        del st.session_state["relatorio_atual"] # Reseta a pré-visualização ao mudar de tom
+        del st.session_state["relatorio_atual"]
 
-# Mapeamento dos tons para os prompts do sistema
 prompts_sistema = {
     "Executivo (Padrão)": "Você é um analista de dados sénior especialista em relatórios executivos.",
     "Comercial / Foco em Vendas": "Você é um diretor comercial focado em estratégias de vendas, expansão de mercado e aumento de receita.",
@@ -70,34 +69,44 @@ if ficheiro_carregado is not None:
         if colunas_em_falta:
             st.error(f"[-] O ficheiro enviado não tem as colunas obrigatórias: {colunas_em_falta}")
         else:
-            st.subheader("📋 Dados Originais Validados")
-            st.dataframe(df)
+            # Processamento base do faturamento
+            df["Faturamento_Total"] = df["Preco_Unitario"] * df["Quantidade_Vendida"]
+            
+            # --- FILTRO INTERATIVO POR CATEGORIA (PASSO 1) ---
+            st.sidebar.divider()
+            st.sidebar.header("🔍 Filtros de Dados")
+            categorias_disponiveis = ["Todas"] + list(df["Categoria"].unique())
+            categoria_selecionada = st.sidebar.selectbox("Filtrar por Categoria:", categorias_disponiveis)
+            
+            # Aplica o filtro se selecionado
+            if categoria_selecionada != "Todas":
+                df_filtrado = df[df["Categoria"] == categoria_selecionada].copy()
+            else:
+                df_filtrado = df.copy()
+            
+            st.subheader(f"📋 Dados Validados ({'Todas as Categorias' if categoria_selecionada == 'Todas' else categoria_selecionada})")
+            st.dataframe(df_filtrado)
             
             if st.button("Executar Análise com IA e Gerar Pré-visualização"):
-                with st.spinner(f"A processar dados com o tom '{tom_relatorio}'..."):
-                    # Processamento com Pandas
-                    df["Faturamento_Total"] = df["Preco_Unitario"] * df["Quantidade_Vendida"]
-                    dados_em_texto = df.to_csv(index=False)
+                with st.spinner(f"A processar dados filtrados com o tom '{tom_relatorio}'..."):
+                    dados_em_texto = df_filtrado.to_csv(index=False)
                     
-                    # Chamada à API da Groq com o tom selecionado
                     system_prompt = prompts_sistema[tom_relatorio]
                     response = client.chat.completions.create(
                         model="openai/gpt-oss-safeguard-20b",
                         messages=[
                             {"role": "system", "content": system_prompt},
-                            {"role": "user", "content": f"Elabore um relatório detalhado com base nestes dados:\n\n{dados_em_texto}"}
+                            {"role": "user", "content": f"Elabore um relatório detalhado com base nestes dados filtrados:\n\n{dados_em_texto}"}
                         ],
                     )
                     
                     relatorio_ia = response.choices[0].message.content
                     
-                    # Guarda na sessão do Streamlit
                     st.session_state["relatorio_atual"] = relatorio_ia
-                    st.session_state["df_processado"] = df
+                    st.session_state["df_processado"] = df_filtrado
                     
-                    # Guarda também no disco para o histórico lateral
                     with open("relatorio_executivo.md", "w", encoding="utf-8") as f:
-                        f.write(f"# Relatório Executivo ({tom_relatorio})\n\n")
+                        f.write(f"# Relatório Executivo ({tom_relatorio} - {categoria_selecionada})\n\n")
                         f.write(relatorio_ia)
                 
                 st.success("Análise e pré-visualização geradas com sucesso!")
@@ -108,17 +117,22 @@ if ficheiro_carregado is not None:
                 st.divider()
                 st.header("🔍 Pré-visualização Antes do Download")
                 
-                aba_texto, aba_graficos = st.tabs(["📄 Pré-visualização do Relatório", "📈 Pré-visualização de Gráficos"])
+                aba_texto, aba_graficos = st.tabs(["📄 Pré-visualização do Relatório", "📈 Gráficos Avançados (Múltiplas Métricas)"])
                 
                 with aba_texto:
-                    st.info(f"Conteúdo atual gerado com o tom: **{tom_relatorio}**")
+                    st.info(f"Conteúdo atual gerado com o tom: **{tom_relatorio}** | Filtro: **{categoria_selecionada}**")
                     st.markdown(st.session_state["relatorio_atual"])
                 
                 with aba_graficos:
-                    st.info("Validação visual do faturamento total por produto:")
+                    st.info("Análise visual avançada: Faturamento e Quantidade Vendida por Produto")
                     df_graf = st.session_state["df_processado"]
-                    if "Produto" in df_graf.columns and "Faturamento_Total" in df_graf.columns:
+                    if "Produto" in df_graf.columns:
+                        # Gráfico avançado comparando faturamento e quantidade
+                        st.write("**Faturamento Total por Produto (R$)**")
                         st.bar_chart(df_graf.set_index("Produto")["Faturamento_Total"])
+                        
+                        st.write("**Quantidade Vendida por Produto (Unidades)**")
+                        st.bar_chart(df_graf.set_index("Produto")["Quantidade_Vendida"], color="#2ecc71")
                 
                 st.divider()
                 st.subheader("📥 Opções de Download Profissional")
