@@ -5,9 +5,11 @@ import pandas as pd
 import streamlit as st
 from openai import OpenAI
 from dotenv import load_dotenv
-import openpyxl
-from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
-from openpyxl.utils import get_column_letter
+
+# Importação dos módulos arquiteturais e configurações
+from config import PROMPTS_SISTEMA, COLUNAS_OBRIGATORIAS
+from utils import validar_e_processar_dados
+from excel_generator import gerar_excel_executivo
 
 # Carrega as variáveis de ambiente iniciais
 load_dotenv()
@@ -54,23 +56,16 @@ st.sidebar.divider()
 st.sidebar.markdown("#### ⚙️ Motor de IA")
 tom_relatorio = st.sidebar.selectbox(
     "Tom do Relatório:",
-    ["Executivo (Padrão)", "Comercial / Foco em Vendas", "Técnico / Foco em Custos"]
+    list(PROMPTS_SISTEMA.keys())
 )
 
-# Gestão de estado para mudança de tom
+# Gestão inteligente de estado para mudança de tom sem apagar relatórios ativos
 if "tom_anterior" not in st.session_state:
     st.session_state["tom_anterior"] = tom_relatorio
 
 if st.session_state["tom_anterior"] != tom_relatorio:
     st.session_state["tom_anterior"] = tom_relatorio
-    if "relatorio_atual" in st.session_state:
-        del st.session_state["relatorio_atual"]
-
-prompts_sistema = {
-    "Executivo (Padrão)": "Você é um analista de dados sénior especialista em relatórios executivos de alto impacto.",
-    "Comercial / Foco em Vendas": "Você é um diretor comercial focado em estratégias de vendas, expansão de mercado e aumento de receita.",
-    "Técnico / Foco em Custos": "Você é um auditor financeiro e de operações focado em otimização de stock, margens e redução de custos."
-}
+    # Mantém o relatório atual em sessão, mas regista a mudança de tom
 
 st.sidebar.divider()
 st.sidebar.markdown("#### 📂 Histórico de Relatórios")
@@ -82,29 +77,29 @@ if os.path.exists("relatorio_executivo.md"):
 else:
     st.sidebar.info("Nenhum relatório anterior guardado.")
 
-# --- CORPO PRINCIPAL: IMPORTAÇÃO DE DADOS ---
-st.markdown("### 📥 Importação de Ficheiro de Dados")
-ficheiro_carregado = st.file_uploader("Arraste ou selecione o seu ficheiro CSV (colunas obrigatórias: Produto, Categoria, Preco_Unitario, Quantidade_Vendida)", type=["csv"])
+# --- CORPO PRINCIPAL: IMPORTAÇÃO DE DADOS (MULTI-UPLOAD) ---
+st.markdown("### 📥 Importação de Ficheiros de Dados")
+ficheiros_carregados = st.file_uploader(
+    f"Arraste ou selecione um ou mais ficheiros CSV (colunas obrigatórias: {', '.join(COLUNAS_OBRIGATORIAS)})", 
+    type=["csv"], 
+    accept_multiple_files=True
+)
 
-if ficheiro_carregado is not None:
+if ficheiros_carregados:
     try:
-        # Lê o CSV enviado
-        df = pd.read_csv(ficheiro_carregado)
+        # Consolidação de múltiplos ficheiros
+        lista_dfs = [pd.read_csv(f) for f in ficheiros_carregados]
+        df_bruto = pd.concat(lista_dfs, ignore_index=True)
         
-        # Validação robusta de colunas obrigatórias
-        colunas_obrigatorias = ["Produto", "Categoria", "Preco_Unitario", "Quantidade_Vendida"]
-        colunas_em_falta = [col for col in colunas_obrigatorias if col not in df.columns]
+        # Validação e Processamento via módulo utilitário
+        df, tem_negativos = validar_e_processar_dados(df_bruto)
         
-        if colunas_em_falta:
-            st.error(f"❌ Erro de Validação: O ficheiro não contém as colunas obrigatórias: {colunas_em_falta}")
+        if df is None:
+            st.error(f"❌ Erro de Validação: {tem_negativos}")
         else:
-            # Auditoria de anomalias (Valores negativos)
-            if (df["Preco_Unitario"] < 0).any() or (df["Quantidade_Vendida"] < 0).any():
+            if tem_negativos:
                 st.warning("⚠️ **Aviso de Auditoria:** Foram detetados valores negativos nos preços ou quantidades. Os cálculos analíticos podem ser comprometidos.")
 
-            # Processamento base do faturamento
-            df["Faturamento_Total"] = df["Preco_Unitario"] * df["Quantidade_Vendida"]
-            
             # --- FILTRAGEM DINÂMICA NA BARRA LATERAL ---
             st.sidebar.divider()
             st.sidebar.markdown("#### 🔍 Filtros Analíticos")
@@ -157,7 +152,7 @@ if ficheiro_carregado is not None:
                     
                     with st.spinner(f"✨ A processar análise estratégica com o tom '{tom_relatorio}'..."):
                         dados_em_texto = df_filtrado.to_csv(index=False)
-                        system_prompt = prompts_sistema[tom_relatorio]
+                        system_prompt = PROMPTS_SISTEMA[tom_relatorio]
                         
                         response = client.chat.completions.create(
                             model="openai/gpt-oss-safeguard-20b",
@@ -194,6 +189,7 @@ if ficheiro_carregado is not None:
                     st.markdown("#### Análise Gráfica Comparativa de Desempenho")
                     df_graf = st.session_state["df_processado"]
                     if "Produto" in df_graf.columns:
+                        # Gráficos individuais por produto
                         col_g1, col_g2 = st.columns(2)
                         with col_g1:
                             st.markdown("**Faturamento por Produto (R$)**")
@@ -201,126 +197,20 @@ if ficheiro_carregado is not None:
                         with col_g2:
                             st.markdown("**Volume Vendido por Produto (Unidades)**")
                             st.bar_chart(df_graf.set_index("Produto")["Quantidade_Vendida"], color="#10B981")
+                        
+                        st.markdown("<br>", unsafe_allow_html=True)
+                        
+                        # NOVO GRÁFICO 3: Faturamento Agregado por Categoria
+                        st.markdown("#### 📊 Distribuição Consolidada de Faturamento por Categoria")
+                        df_categoria = df_graf.groupby("Categoria")["Faturamento_Total"].sum()
+                        st.bar_chart(df_categoria, color="#8B5CF6")
                 
                 st.divider()
                 st.markdown("## 📥 Exportação de Resultados Profissionais")
                 
-                # --- PREPARAÇÃO DOS FICHEIROS PARA DOWNLOAD (EXCEL PROFISSIONAL & ZIP) ---
+                # --- GERAÇÃO DE FICHEIROS ATRAVÉS DOS MÓDULOS ---
                 df_excel = st.session_state["df_processado"]
-                excel_output = io.BytesIO()
-                
-                wb = openpyxl.Workbook()
-                
-                # Estilos comuns
-                header_fill = PatternFill(start_color="1F4E78", end_color="1F4E78", fill_type="solid")
-                header_font = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
-                data_font = Font(name="Calibri", size=11)
-                title_font = Font(name="Calibri", size=14, bold=True, color="1F4E78")
-                thin_border = Border(
-                    left=Side(style='thin', color='D9D9D9'), right=Side(style='thin', color='D9D9D9'),
-                    top=Side(style='thin', color='D9D9D9'), bottom=Side(style='thin', color='D9D9D9')
-                )
-                
-                # --- ABA 1: RESUMO DE KPIs (Alinhada perfeitamente na coluna A) ---
-                ws_kpi = wb.active
-                ws_kpi.title = "Resumo & KPIs"
-                ws_kpi.views.sheetView[0].showGridLines = True
-                
-                ws_kpi.cell(row=1, column=1, value="PAINEL EXECUTIVO DE INDICADORES").font = title_font
-                ws_kpi.append([]) # Linha 2 em branco
-                
-                kpi_headers = ["Indicador", "Valor Consolidado"]
-                ws_kpi.append(kpi_headers) # Linha 3
-                
-                # Estilizar cabeçalho de KPIs
-                for col_num in range(1, 3):
-                    cell = ws_kpi.cell(row=3, column=col_num)
-                    cell.fill = header_fill
-                    cell.font = header_font
-                    cell.alignment = Alignment(horizontal="center", vertical="center")
-                
-                kpi_data = [
-                    ["Faturamento Total", total_faturamento],
-                    ["Volume Total Vendido", total_quantidade],
-                    ["Ticket Médio Global", ticket_medio]
-                ]
-                
-                for r_idx, row_val in enumerate(kpi_data, start=4):
-                    ws_kpi.append(row_val)
-                    c1 = ws_kpi.cell(row=r_idx, column=1)
-                    c2 = ws_kpi.cell(row=r_idx, column=2)
-                    c1.font = data_font
-                    c1.border = thin_border
-                    c2.font = data_font
-                    c2.border = thin_border
-                    if "Faturamento" in row_val[0] or "Ticket" in row_val[0]:
-                        c2.number_format = '"R$ "* #,##0.00'
-                        c2.alignment = Alignment(horizontal="right")
-                    else:
-                        c2.number_format = '#,##0'
-                        c2.alignment = Alignment(horizontal="center")
-
-                # Ajustar largura automática da Aba 1
-                for col in ws_kpi.columns:
-                    max_len = max(len(str(cell.value or '')) for cell in col)
-                    col_letter = get_column_letter(col[0].column)
-                    ws_kpi.column_dimensions[col_letter].width = max(max_len + 6, 22)
-
-                # --- ABA 2: DADOS DETALHADOS ---
-                ws_data = wb.create_sheet(title="Dados Detalhados")
-                ws_data.views.sheetView[0].showGridLines = True
-                
-                headers = list(df_excel.columns)
-                ws_data.append(headers)
-                
-                for col_num in range(1, len(headers) + 1):
-                    cell = ws_data.cell(row=1, column=col_num)
-                    cell.fill = header_fill
-                    cell.font = header_font
-                    cell.alignment = Alignment(horizontal="center", vertical="center")
-                
-                for row_idx, row in enumerate(df_excel.values, start=2):
-                    ws_data.append(list(row))
-                    for col_idx in range(1, len(row) + 1):
-                        cell = ws_data.cell(row=row_idx, column=col_idx)
-                        cell.font = data_font
-                        cell.border = thin_border
-                        if headers[col_idx - 1] in ["Preco_Unitario", "Faturamento_Total"]:
-                            cell.number_format = '"R$ "* #,##0.00'
-                            cell.alignment = Alignment(horizontal="right")
-                        elif headers[col_idx - 1] == "Quantidade_Vendida":
-                            cell.number_format = '#,##0'
-                            cell.alignment = Alignment(horizontal="center")
-                        else:
-                            cell.alignment = Alignment(horizontal="left")
-                
-                last_row = len(df_excel) + 1
-                total_row_idx = last_row + 1
-                total_font = Font(name="Calibri", size=11, bold=True)
-                total_border = Border(top=Side(style='thin', color='000000'), bottom=Side(style='double', color='000000'))
-                
-                ws_data.cell(row=total_row_idx, column=1, value="TOTAL")
-                ws_data.cell(row=total_row_idx, column=4, value=f"=SUM(D2:D{last_row})")
-                ws_data.cell(row=total_row_idx, column=5, value=f"=SUM(E2:E{last_row})")
-                
-                for col_idx in range(1, len(headers) + 1):
-                    cell = ws_data.cell(row=total_row_idx, column=col_idx)
-                    cell.font = total_font
-                    cell.border = total_border
-                    if headers[col_idx - 1] in ["Preco_Unitario", "Faturamento_Total"]:
-                        cell.number_format = '"R$ "* #,##0.00'
-                        cell.alignment = Alignment(horizontal="right")
-                    elif headers[col_idx - 1] == "Quantidade_Vendida":
-                        cell.number_format = '#,##0'
-                        cell.alignment = Alignment(horizontal="center")
-                
-                for col in ws_data.columns:
-                    max_len = max(len(str(cell.value or '')) for cell in col)
-                    col_letter = get_column_letter(col[0].column)
-                    ws_data.column_dimensions[col_letter].width = max(max_len + 4, 15)
-                
-                wb.save(excel_output)
-                excel_bytes = excel_output.getvalue()
+                excel_bytes = gerar_excel_executivo(df_excel, total_faturamento, total_quantidade, ticket_medio)
 
                 # Criar Pacote ZIP em memória
                 zip_output = io.BytesIO()
