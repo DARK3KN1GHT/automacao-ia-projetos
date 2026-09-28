@@ -1,6 +1,11 @@
 Produto,Categoria,Preco_Unitario,Quantidade_Vendida
-Teclado Mecânico,Periféricos,350.0,45
-Rato Gamer,Periféricos,150.0,120
-Monitor Ultrawide,Monitores,1800.0,15
-Headset Bluetooth,Áudio,250.0,60
-Cadeira de Escritório,Mobiliário,1200.0,8
+Teclado Mecânico RGB,Periféricos,350,45
+Rato Gamer Wireless,Periféricos,180,120
+Monitor Ultrawide 34",Monitores,2100,12
+Monitor LED 24",Monitores,850,30
+Headset Surround 7.1,Áudio,290,65
+Caixa de Som Bluetooth,Áudio,190,50
+Cadeira Executiva Ergonômica,Mobiliário,1400,10
+Mesa de Escritório Ajustável,Mobiliário,1850,7
+Hub USB-C Multiuso,Periféricos,120,95
+Webcam Full HD 1080p,Periféricos,220,40

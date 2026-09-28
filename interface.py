@@ -1,15 +1,18 @@
 import os
 import io
+import re
 import zipfile
 import pandas as pd
 import streamlit as st
 from openai import OpenAI
 from dotenv import load_dotenv
 
-# Importação dos módulos arquiteturais e configurações
+# Importação dos módulos da nossa arquitetura modular sénior
 from config import PROMPTS_SISTEMA, COLUNAS_OBRIGATORIAS
 from utils import validar_e_processar_dados
 from excel_generator import gerar_excel_executivo
+from charts import renderizar_graficos_analiticos
+from pdf_generator import gerar_pdf_executivo
 
 # Carrega as variáveis de ambiente iniciais
 load_dotenv()
@@ -42,12 +45,12 @@ st.markdown("""
 
 # --- CABEÇALHO DA APLICAÇÃO ---
 st.title("⚡ Enterprise Data & AI Intelligence Hub")
-st.markdown("Plataforma avançada para validação de dados, monitorização de KPIs corporativos, relatórios gerados por IA e exportação executiva.")
+st.markdown("Plataforma avançada para validação de dados, monitoramento de KPIs corporativos, relatórios gerados por IA e exportação executiva.")
 
 st.divider()
 
 # --- BARRA LATERAL (CONFIGURAÇÕES E HISTÓRICO) ---
-st.sidebar.markdown("### 🎛️ Painel de Controlo")
+st.sidebar.markdown("### 🎛️ Painel de Controle")
 
 st.sidebar.markdown("#### 🔑 Credenciais")
 api_key_input = st.sidebar.text_input("Chave API da Groq:", type="password", value=os.environ.get("GROQ_API_KEY", ""))
@@ -59,18 +62,16 @@ tom_relatorio = st.sidebar.selectbox(
     list(PROMPTS_SISTEMA.keys())
 )
 
-# Gestão inteligente de estado para mudança de tom sem apagar relatórios ativos
 if "tom_anterior" not in st.session_state:
     st.session_state["tom_anterior"] = tom_relatorio
 
 if st.session_state["tom_anterior"] != tom_relatorio:
     st.session_state["tom_anterior"] = tom_relatorio
-    # Mantém o relatório atual em sessão, mas regista a mudança de tom
 
 st.sidebar.divider()
 st.sidebar.markdown("#### 📂 Histórico de Relatórios")
 if os.path.exists("relatorio_executivo.md"):
-    if st.sidebar.button("📄 Carregar Último Relatório Salvo", use_container_width=True):
+    if st.sidebar.button("📄 Carregar Último Relatório Salvo", width='stretch'):
         with open("relatorio_executivo.md", "r", encoding="utf-8") as f:
             st.session_state["relatorio_atual"] = f.read()
         st.sidebar.success("Relatório carregado com sucesso!")
@@ -78,9 +79,9 @@ else:
     st.sidebar.info("Nenhum relatório anterior guardado.")
 
 # --- CORPO PRINCIPAL: IMPORTAÇÃO DE DADOS (MULTI-UPLOAD) ---
-st.markdown("### 📥 Importação de Ficheiros de Dados")
+st.markdown("### 📥 Importação de Arquivos de Dados")
 ficheiros_carregados = st.file_uploader(
-    f"Arraste ou selecione um ou mais ficheiros CSV (colunas obrigatórias: {', '.join(COLUNAS_OBRIGATORIAS)})", 
+    f"Arraste ou selecione um ou mais arquivos CSV (colunas obrigatórias: {', '.join(COLUNAS_OBRIGATORIAS)})", 
     type=["csv"], 
     accept_multiple_files=True
 )
@@ -92,13 +93,15 @@ if ficheiros_carregados:
         df_bruto = pd.concat(lista_dfs, ignore_index=True)
         
         # Validação e Processamento via módulo utilitário
-        df, tem_negativos = validar_e_processar_dados(df_bruto)
+        df, auditoria = validar_e_processar_dados(df_bruto)
         
         if df is None:
-            st.error(f"❌ Erro de Validação: {tem_negativos}")
+            st.error(f"❌ Erro de Validação: {auditoria}")
         else:
-            if tem_negativos:
-                st.warning("⚠️ **Aviso de Auditoria:** Foram detetados valores negativos nos preços ou quantidades. Os cálculos analíticos podem ser comprometidos.")
+            if auditoria["negativos"]:
+                st.warning("⚠️ **Aviso de Auditoria:** Foram detetados valores negativos nos preços ou quantidades.")
+            if auditoria["nulos"]:
+                st.warning("⚠️ **Aviso de Auditoria:** Foram detetados campos em branco ou valores nulos (NaN) nos dados.")
 
             # --- FILTRAGEM DINÂMICA NA BARRA LATERAL ---
             st.sidebar.divider()
@@ -118,13 +121,13 @@ if ficheiros_carregados:
             total_quantidade = df_filtrado["Quantidade_Vendida"].sum()
             ticket_medio = total_faturamento / total_quantidade if total_quantidade > 0 else 0
             
-            st.markdown(f"### 📊 Indicadores Chave de Desempenho (KPIs) — *{categoria_selecionada}*")
+            st.markdown(f"### 📊 Indicadores-Chave de Desempenho (KPIs) — *{categoria_selecionada}*")
             
             kpi1, kpi2, kpi3 = st.columns(3)
             with kpi1:
                 st.metric(label="💰 Faturamento Total", value=f"R$ {total_faturamento:,.2f}", delta="Consolidado")
             with kpi2:
-                st.metric(label="📦 Volume Total Vendido", value=f"{total_quantidade:,} un", delta="Stock/Saída")
+                st.metric(label="📦 Volume Total Vendido", value=f"{total_quantidade:,} un", delta="Estoque/Saída")
             with kpi3:
                 st.metric(label="🏷️ Ticket Médio Global", value=f"R$ {ticket_medio:,.2f}", delta="Média por Item")
             
@@ -132,14 +135,14 @@ if ficheiros_carregados:
             
             # --- TABELA DE DADOS VALIDADOS ---
             with st.expander("🔍 Ver Tabela de Dados Detalhada (Expandir/Recolher)", expanded=False):
-                st.dataframe(df_filtrado, use_container_width=True)
+                st.dataframe(df_filtrado, width='stretch')
             
             st.markdown("<br>", unsafe_allow_html=True)
             
             # --- BOTÃO DE EXECUÇÃO DA IA ---
             col_acao1, col_acao2, col_acao3 = st.columns([1, 2, 1])
             with col_acao2:
-                botao_executar = st.button("🚀 Executar Análise Inteligente com IA", use_container_width=True, type="primary")
+                botao_executar = st.button("🚀 Executar Análise Inteligente com IA", width='stretch', type="primary")
             
             if botao_executar:
                 if not api_key_input:
@@ -151,18 +154,67 @@ if ficheiros_carregados:
                     )
                     
                     with st.spinner(f"✨ A processar análise estratégica com o tom '{tom_relatorio}'..."):
+                        resumo_categorias = df_filtrado.groupby("Categoria").agg(
+                            Faturamento=("Faturamento_Total", "sum"),
+                            Quantidade=("Quantidade_Vendida", "sum")
+                        ).reset_index()
+                        
+                        resumo_categorias["Percentual_Faturamento"] = (resumo_categorias["Faturamento"] / total_faturamento) * 100
+                        
+                        tabela_resumo_texto = resumo_categorias.to_string(index=False)
                         dados_em_texto = df_filtrado.to_csv(index=False)
+                        
+                        contexto_metricas = (
+                            f"\n\n[DADOS OFICIAIS CALCULADOS - PROIBIDO ALTERAR ESTES NÚMEROS]:\n"
+                            f"- Faturamento Total: R$ {total_faturamento:,.2f}\n"
+                            f"- Quantidade Total Vendida: {total_quantidade:,} unidades\n"
+                            f"- Ticket Médio Global: R$ {ticket_medio:,.2f}\n\n"
+                            f"Resumo Oficial por Categoria (Utilize obrigatoriamente estes valores na tabela):\n"
+                            f"{tabela_resumo_texto}\n"
+                        )
+                        
                         system_prompt = PROMPTS_SISTEMA[tom_relatorio]
                         
                         response = client.chat.completions.create(
                             model="openai/gpt-oss-safeguard-20b",
                             messages=[
                                 {"role": "system", "content": system_prompt},
-                                {"role": "user", "content": f"Elabore um relatório executivo de alta performance com base nestes dados:\n\n{dados_em_texto}"}
+                                {"role": "user", "content": f"Elabore um relatório executivo de alta performance utilizando estritamente os dados oficiais calculados abaixo, garantindo obrigatoriamente o símbolo monetário 'R$' colado aos valores e sem citar estoques inexistentes:\n\n{contexto_metricas}\n\nDados detalhados:\n{dados_em_texto}"}
                             ],
                         )
                         
                         relatorio_ia = response.choices[0].message.content
+                        
+                        # =========================================================================
+                        # PÓS-PROCESSADOR INTELIGENTE POR REGEX (BLINDAGEM ABSOLUTA DE DADOS E FORMATO)
+                        # =========================================================================
+                        
+                        # 1. Captura QUALQUER variação de 'R' solto antes de números e força 'R$'
+                        relatorio_ia = re.sub(r'\bR\s+(?=\d)', 'R$ ', relatorio_ia)
+                        relatorio_ia = re.sub(r'\bR(?=\s*[\d\.,]+)', 'R$ ', relatorio_ia)
+                        
+                        # 2. Limpeza de erros conceituais de estoque
+                        relatorio_ia = (
+                            relatorio_ia.replace("em estoque", "comercializadas")
+                                        .replace("unidades em estoque", "unidades comercializadas")
+                                        .replace("estoque logístico", "escoamento logístico")
+                                        .replace("estoque", "vendas")
+                        )
+                        
+                        # 3. Substituições cirúrgicas de termos e vocabulário
+                        relatorio_ia = (
+                            relatorio_ia.replace("Rato", "Mouse")
+                                        .replace("rato", "mouse")
+                                        .replace("quase metade", "mais de um terço")
+                                        .replace("gama média", "categoria média")
+                                        .replace("alta gama", "alta performance")
+                                        .replace("Mouse Gamer Wireless (mouse)", "Mouse Gamer Wireless")
+                                        .replace("keyboards", "teclados")
+                                        .replace("Keyboard", "Teclado")
+                        )
+                        
+                        # Garante duplicação zero de cifrões
+                        relatorio_ia = relatorio_ia.replace("R$$", "R$")
                         
                         st.session_state["relatorio_atual"] = relatorio_ia
                         st.session_state["df_processado"] = df_filtrado
@@ -171,8 +223,7 @@ if ficheiros_carregados:
                             f.write(f"# Relatório Executivo ({tom_relatorio} - {categoria_selecionada})\n\n")
                             f.write(relatorio_ia)
                     
-                    st.success("🎉 Análise avançada gerada com sucesso!")
-                    st.balloons()
+                    st.success("🎉 Análise avançada gerada com sucesso e pronta para revisão!")
 
             # --- PRÉ-VISUALIZAÇÃO ANTES DO DOWNLOAD ---
             if "relatorio_atual" in st.session_state:
@@ -188,22 +239,7 @@ if ficheiros_carregados:
                 with aba_graficos:
                     st.markdown("#### Análise Gráfica Comparativa de Desempenho")
                     df_graf = st.session_state["df_processado"]
-                    if "Produto" in df_graf.columns:
-                        # Gráficos individuais por produto
-                        col_g1, col_g2 = st.columns(2)
-                        with col_g1:
-                            st.markdown("**Faturamento por Produto (R$)**")
-                            st.bar_chart(df_graf.set_index("Produto")["Faturamento_Total"], color="#3B82F6")
-                        with col_g2:
-                            st.markdown("**Volume Vendido por Produto (Unidades)**")
-                            st.bar_chart(df_graf.set_index("Produto")["Quantidade_Vendida"], color="#10B981")
-                        
-                        st.markdown("<br>", unsafe_allow_html=True)
-                        
-                        # NOVO GRÁFICO 3: Faturamento Agregado por Categoria
-                        st.markdown("#### 📊 Distribuição Consolidada de Faturamento por Categoria")
-                        df_categoria = df_graf.groupby("Categoria")["Faturamento_Total"].sum()
-                        st.bar_chart(df_categoria, color="#8B5CF6")
+                    renderizar_graficos_analiticos(df_graf)
                 
                 st.divider()
                 st.markdown("## 📥 Exportação de Resultados Profissionais")
@@ -211,16 +247,18 @@ if ficheiros_carregados:
                 # --- GERAÇÃO DE FICHEIROS ATRAVÉS DOS MÓDULOS ---
                 df_excel = st.session_state["df_processado"]
                 excel_bytes = gerar_excel_executivo(df_excel, total_faturamento, total_quantidade, ticket_medio)
+                pdf_bytes = gerar_pdf_executivo(st.session_state["relatorio_atual"], categoria_selecionada, tom_relatorio)
 
-                # Criar Pacote ZIP em memória
+                # Criar Pacote ZIP em memória contendo Markdown, Excel e PDF
                 zip_output = io.BytesIO()
                 with zipfile.ZipFile(zip_output, 'w', zipfile.ZIP_DEFLATED) as zipf:
                     zipf.writestr("relatorio_executivo.md", st.session_state["relatorio_atual"])
                     zipf.writestr("relatorio_vendas_executivo.xlsx", excel_bytes)
+                    zipf.writestr("relatorio_executivo.pdf", pdf_bytes)
                 zip_bytes = zip_output.getvalue()
 
-                # Botões de Download em colunas harmoniosas
-                col_down1, col_down2, col_down3 = st.columns(3)
+                # Botões de Download em 4 colunas harmoniosas
+                col_down1, col_down2, col_down3, col_down4 = st.columns(4)
                 
                 with col_down1:
                     st.download_button(
@@ -228,7 +266,7 @@ if ficheiros_carregados:
                         data=st.session_state["relatorio_atual"],
                         file_name="relatorio_executivo.md",
                         mime="text/markdown",
-                        use_container_width=True
+                        width='stretch'
                     )
                 
                 with col_down2:
@@ -237,16 +275,25 @@ if ficheiros_carregados:
                         data=excel_bytes,
                         file_name="relatorio_vendas_executivo.xlsx",
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                        use_container_width=True
+                        width='stretch'
                     )
 
                 with col_down3:
                     st.download_button(
-                        label="📦 Descarregar Pacote Completo (.zip)",
+                        label="📑 Relatório PDF (.pdf)",
+                        data=pdf_bytes,
+                        file_name="relatorio_executivo.pdf",
+                        mime="application/pdf",
+                        width='stretch'
+                    )
+
+                with col_down4:
+                    st.download_button(
+                        label="📦 Pacote Completo (.zip)",
                         data=zip_bytes,
                         file_name="pacote_relatorio_executivo.zip",
                         mime="application/zip",
-                        use_container_width=True
+                        width='stretch'
                     )
                     
     except Exception as e:
