@@ -1,187 +1,140 @@
-import io
 import re
-from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib import colors
+from fpdf import FPDF
 
-class PDFRelatorioExecutivo(SimpleDocTemplate):
-    pass
+class PDF(FPDF):
+    def header(self):
+        self.set_font('Arial', 'B', 12) # Fonte ligeiramente menor
+        self.set_text_color(42, 52, 65)
+        self.cell(0, 5, 'Enterprise Data & AI Intelligence Hub', 0, 1, 'C')
+        
+        self.set_draw_color(200, 200, 200)
+        self.line(10, 15, 200, 15)
+        self.ln(1.5) 
 
-def limpar_texto_portugues(texto):
-    """
-    Limpa e substitui caracteres especiais para garantir compatibilidade 
-    com a fonte padrão do ReportLab, mantendo o padrão PT-BR.
-    """
-    if not isinstance(texto, str):
+    def footer(self):
+        self.set_y(-8) 
+        self.set_font('Arial', 'I', 7)
+        self.set_text_color(128, 128, 128)
+        self.cell(0, 8, f'Página {self.page_no()}', 0, 0, 'C')
+
+def limpar_sintaxe_e_encoding(texto):
+    texto_strip = texto.strip()
+    if re.match(r'^[-_]{3,}$', texto_strip):
         return ""
-    
-    substituicoes = {
-        '–': '-',
-        '—': '-',
-        '•': '-',
-        '“': '"',
-        '”': '"',
-        '‘': "'",
-        '’': "'",
-        '\xa0': ' ',
-        '■': '-',
-        '€': 'R$',
-        'á': 'a', 'à': 'a', 'ã': 'a', 'â': 'a', 'Á': 'A', 'À': 'A', 'Ã': 'A', 'Â': 'A',
-        'é': 'e', 'ê': 'e', 'É': 'E', 'Ê': 'E',
-        'í': 'i', 'Í': 'I',
-        'ó': 'o', 'ô': 'o', 'õ': 'o', 'Ó': 'O', 'Ô': 'O', 'Õ': 'O',
-        'ú': 'u', 'Ú': 'U',
-        'ç': 'c', 'Ç': 'C'
-    }
-    
-    for k, v in substituicoes.items():
-        texto = texto.replace(k, v)
         
-    texto = texto.replace('<br>', ' ').replace('<br/>', ' ').replace('<br />', ' ')
-    return texto.encode('ascii', 'ignore').decode('ascii')
+    texto = re.sub(r'\*\*(.*?)\*\*', r'\1', texto)
+    texto = re.sub(r'\*(.*?)\*', r'\1', texto)
+    texto = re.sub(r'([a-zA-ZáéíóúãõçÁÉÍÓÚÃÕÇ])(\d\.)', r'\1 \2', texto) 
+    
+    texto = texto.replace("globais-Faturamento", "globais - Faturamento")
+    texto = texto.replace("homeoffice", "home-office").replace("Homeoffice", "Home-office")
+    texto = texto.replace("Hub USBC", "Hub USB-C").replace("Hub USB C", "Hub USB-C")
+    texto = texto.replace("do 2024", "de 2024")
+    
+    texto = texto.replace('\xa0', ' ').replace('\u200b', '')
+    texto = texto.replace('•', '-')
+    texto = re.sub(r'[\u2010\u2011\u2012\u2013\u2014\u2015\u2212]', '-', texto)
+    texto = texto.replace('“', '"').replace('”', '"').replace('‘', "'").replace('’', "'")
+    texto = texto.replace("Hub USB?C", "Hub USB-C").replace("cross?sell", "cross-sell")
+    
+    return texto.strip()
 
-def gerar_pdf_executivo(relatorio_texto, categoria_selecionada, tom_relatorio):
-    """
-    Gera um relatório PDF executivo com design corporativo em Português do Brasil.
-    """
-    buffer = io.BytesIO()
-    doc = SimpleDocTemplate(
-        buffer,
-        pagesize=letter,
-        rightMargin=36, leftMargin=36,
-        topMargin=36, bottomMargin=36
-    )
+def gerar_pdf_executivo(relatorio_md, categoria, tom):
+    pdf = PDF()
+    pdf.add_page()
     
-    styles = getSampleStyleSheet()
+    pdf.set_margins(10, 10, 10)
+    pdf.set_auto_page_break(auto=True, margin=6) # Limite inferior ultra comprimido
     
-    estilo_titulo_principal = ParagraphStyle(
-        'TituloPrincipal',
-        parent=styles['Heading1'],
-        fontName='Helvetica-Bold',
-        fontSize=16,
-        textColor=colors.HexColor('#1F4E78'),
-        spaceAfter=4
-    )
+    linhas = relatorio_md.split('\n')
+    em_tabela = False
+    larguras = []
     
-    estilo_sub = ParagraphStyle(
-        'SubTitulo',
-        parent=styles['Normal'],
-        fontName='Helvetica-Oblique',
-        fontSize=9.5,
-        textColor=colors.HexColor('#555555'),
-        spaceAfter=10
-    )
-    
-    estilo_h2 = ParagraphStyle(
-        'SecaoTitulo',
-        parent=styles['Heading2'],
-        fontName='Helvetica-Bold',
-        fontSize=11,
-        textColor=colors.HexColor('#1F4E78'),
-        spaceBefore=10,
-        spaceAfter=4
-    )
-    
-    estilo_corpo = ParagraphStyle(
-        'CorpoTexto',
-        parent=styles['Normal'],
-        fontName='Helvetica',
-        fontSize=9,
-        leading=12,
-        textColor=colors.HexColor('#333333'),
-        spaceAfter=4
-    )
-    
-    estilo_celula = ParagraphStyle(
-        'CelulaTabela',
-        parent=styles['Normal'],
-        fontName='Helvetica',
-        fontSize=7.5,
-        leading=9.5,
-        textColor=colors.HexColor('#222222')
-    )
-    
-    estilo_celula_header = ParagraphStyle(
-        'CelulaHeader',
-        parent=styles['Normal'],
-        fontName='Helvetica-Bold',
-        fontSize=7.5,
-        leading=9.5,
-        textColor=colors.white
-    )
-
-    story = []
-    
-    # Cabeçalho Corporativo em PT-BR
-    story.append(Paragraph("Enterprise Data & AI Intelligence Hub", estilo_sub))
-    story.append(Paragraph(limpar_texto_portugues(f"Relatorio Executivo: {tom_relatorio}"), estilo_titulo_principal))
-    story.append(Paragraph(limpar_texto_portugues(f"<b>Escopo Analitico:</b> Categoria [{categoria_selecionada}]"), estilo_sub))
-    story.append(HRFlowable(width="100%", thickness=1.5, color=colors.HexColor('#1F4E78'), spaceAfter=12))
-    
-    if not relatorio_texto:
-        relatorio_texto = "Nenhum relatorio disponivel."
-        
-    linhas = relatorio_texto.split('\n')
-    tabela_linhas_acumuladas = []
-    
-    def processar_tabela_acumulada(linhas_tab):
-        if not linhas_tab:
-            return
-        dados_tabela = []
-        for l in linhas_tab:
-            cols = [Paragraph(limpar_texto_portugues(c.strip()), estilo_celula) for c in l.split('|') if c.strip() != '']
-            if cols:
-                dados_tabela.append(cols)
-                
-        if dados_tabela:
-            for i, cell in enumerate(dados_tabela[0]):
-                txt_original = dados_tabela[0][i].text
-                dados_tabela[0][i] = Paragraph(f"<b>{txt_original}</b>", estilo_celula_header)
-                
-            t = Table(dados_tabela, hAlign='CENTER')
-            t.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1F4E78')),
-                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
-                ('TOPPADDING', (0, 0), (-1, -1), 4),
-                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F2F4F8')]),
-                ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#D3D3D3'))
-            ]))
-            story.append(t)
-            story.append(Spacer(1, 8))
-
     for linha in linhas:
-        linha_str = linha.strip()
+        linha_limpa = limpar_sintaxe_e_encoding(linha)
         
-        if linha_str.startswith('|') and linha_str.endswith('|'):
-            if '---' in linha_str:
-                continue
-            tabela_linhas_acumuladas.append(linha_str)
+        if not linha_limpa:
+            if not em_tabela:
+                pdf.ln(1)
             continue
-        else:
-            if tabela_linhas_acumuladas:
-                processar_tabela_acumulada(tabela_linhas_acumuladas)
-                tabela_linhas_acumuladas = []
+            
+        try:
+            texto_final = linha_limpa.encode('latin-1', 'replace').decode('latin-1')
+        except Exception:
+            texto_final = linha_limpa
+            
+        if re.match(r'^#+\s', texto_final):
+            pdf.ln(1)
+            pdf.set_x(10)
+            pdf.set_font("Arial", 'B', 10) # Título comprimido
+            pdf.set_text_color(20, 30, 40)
+            texto_titulo = re.sub(r'^#+\s', '', texto_final)
+            pdf.multi_cell(190, 4.0, texto_titulo)
+            pdf.ln(0.5)
+            continue
+            
+        if '|' in texto_final and not texto_final.startswith('Nota'):
+            celulas = [c.strip() for c in texto_final.split('|') if c.strip()]
+            if not celulas or all(re.match(r'^[-:\s]+$', c) for c in celulas): continue
                 
-        if not linha_str:
+            if not em_tabela:
+                pdf.set_font("Arial", 'B', 8) 
+                pdf.set_fill_color(240, 240, 240)
+                pdf.set_text_color(20, 30, 40)
+                num_colunas = len(celulas)
+                larguras = [190 / num_colunas] * num_colunas
+                if num_colunas >= 4:
+                    larguras[0] = 55 
+                    sobra = 190 - 55
+                    for i in range(1, num_colunas): larguras[i] = sobra / (num_colunas - 1)
+                em_tabela = True
+                is_header = True
+            else:
+                pdf.set_font("Arial", '', 8)
+                pdf.set_text_color(40, 40, 40)
+                is_header = False
+            
+            if pdf.get_y() > 280: pdf.add_page()
+            pdf.set_x(10)
+            
+            altura_linha = 5.5 # Altura da tabela otimizada
+            
+            max_linhas = 1
+            for i, celula in enumerate(celulas):
+                if i >= len(larguras): break
+                largura_texto = pdf.get_string_width(celula)
+                linhas_estimadas = max(1, int((largura_texto / (larguras[i] - 2)) + 1))
+                if linhas_estimadas > max_linhas: max_linhas = linhas_estimadas
+            
+            altura_total = max_linhas * altura_linha
+            x_atual, y_atual = pdf.get_x(), pdf.get_y()
+            
+            for i, celula in enumerate(celulas):
+                if i >= len(larguras): break
+                largura = larguras[i]
+                alinhamento = 'L' if i == 0 else 'R'
+                
+                pdf.rect(x_atual, y_atual, largura, altura_total, 'DF' if is_header else 'D')
+                pdf.set_xy(x_atual, y_atual)
+                pdf.multi_cell(largura, altura_linha, celula, border=0, align=alinhamento)
+                
+                x_atual += largura
+                
+            pdf.set_xy(10, y_atual + altura_total)
             continue
             
-        linha_limpa = limpar_texto_portugues(linha_str)
-        
-        if linha_limpa.startswith('#'):
-            titulo = linha_limpa.replace('#', '').strip()
-            story.append(Paragraph(titulo, estilo_h2))
-        elif linha_limpa.startswith('>'):
-            citacao = linha_limpa.replace('>', '').strip()
-            story.append(Paragraph(f"<i>{citacao}</i>", estilo_corpo))
-        else:
-            formatado = linha_limpa.replace('**', '<b>', 1).replace('**', '</b>', 1).replace('*', '')
-            story.append(Paragraph(formatado, estilo_corpo))
+        if em_tabela:
+            em_tabela = False
+            pdf.ln(1)
             
-    if tabela_linhas_acumuladas:
-        processar_tabela_acumulada(tabela_linhas_acumuladas)
+        pdf.set_x(10)
+        pdf.set_font("Arial", '', 8) # Fonte base reduzida para 8
+        pdf.set_text_color(60, 60, 60)
+        pdf.multi_cell(190, 4.0, texto_final) # Entrelinha otimizada
         
-    doc.build(story)
-    return buffer.getvalue()
+    try:
+        pdf_bytes = pdf.output(dest='S').encode('latin-1')
+    except AttributeError:
+        pdf_bytes = bytes(pdf.output(dest='S'))
+        
+    return pdf_bytes
